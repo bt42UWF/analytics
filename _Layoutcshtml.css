@@ -1,0 +1,91 @@
+/* Collapsed Sidebar */
+.sidebar {
+  width: 60px; /* Initial collapsed width showing only icons */
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background-color: #f8f9fa;
+  border-right: 1px solid #ddd;
+  transition: width 0.3s; /* Smooth transition when expanding */
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 15px;
+  text-align: center;
+  font-size: 1.5rem;
+  transition: font-size 0.3s;
+}
+
+.nav-item {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.nav-link {
+  padding: 10px 15px;
+  font-size: 1.2rem;
+  color: #0077cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.nav-link i {
+  margin-right: 0; /* No space between icon and text when collapsed */
+  font-size: 1.5rem;
+}
+
+.nav-link .menu-text {
+  display: none;
+  margin-left: 10px; /* Space between icon and text when expanded */
+}
+
+.nav-link:hover {
+  background-color: #f1f1f1;
+}
+
+/* Expanded Sidebar on Hover */
+.sidebar.expanded {
+  width: 250px;
+}
+
+.sidebar.expanded .sidebar-header {
+  font-size: 1.5rem;
+}
+
+.sidebar.expanded .nav-link {
+  justify-content: flex-start; /* Align icon and text when expanded */
+}
+
+.sidebar.expanded .nav-link i {
+  margin-right: 10px; /* Space between icon and text */
+}
+
+.sidebar.expanded .nav-link .menu-text {
+  display: inline-block; /* Show the text when expanded */
+}
+
+.content-container {
+  margin-left: 60px; /* Adjust content to fit collapsed sidebar */
+  padding: 20px;
+  transition: margin-left 0.3s;
+}
+
+.sidebar.expanded ~ .content-container {
+  margin-left: 250px; /* Adjust content to fit expanded sidebar */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+      width: 100%;
+      height: auto;
+      position: relative;
+  }
+  .content-container {
+      margin-left: 0;
+  }
+}
