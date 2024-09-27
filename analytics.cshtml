@@ -1,0 +1,108 @@
+@{
+    ViewData["Title"] = "API/UI Analytics";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+
+    <!-- Metric Cards -->
+    <div class="row text-center">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>API Calls</h4>
+                    <p class="display-4">5,194 Calls</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Error Rate</h4>
+                    <p class="display-4">1.67%</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Date Range</h4>
+                    <input type="date" id="startDate" value="2024-01-01" class="form-control">
+                    <input type="date" id="endDate" value="2024-09-16" class="form-control mt-2">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Response Codes</h4>
+                    <canvas id="responseCodesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Error Logs</h4>
+                    <canvas id="errorLogsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Logs & Error Logs Tables -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">API Logs</h4>
+                    <table id="apiLogsTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Path</th>
+                                <th>Method</th>
+                                <th>Response Code</th>
+                                <th>Response Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data goes here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Error Logs</h4>
+                    <table id="errorLogsTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Exception Message</th>
+                                <th>Exception Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data goes here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include the scripts for Chart.js and DataTables -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>
+
+<!-- Link your custom JavaScript file -->
+<script src="~/js/analytics.js"></script>
