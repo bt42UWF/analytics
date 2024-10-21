@@ -78,3 +78,41 @@ var errorLogsChart = new Chart(ctx2, {
         }
     }
 });
+
+
+
+
+
+
+$(document).ready(function() {
+    // AJAX call to your API
+    $.ajax({
+        url: 'your-api-endpoint',  // Replace with your API endpoint
+        method: 'GET',
+        success: function(response) {
+            // Assuming response is in format: { labels: ['Label1', 'Label2'], data: [30, 70] }
+            var labels = response.labels;
+            var data = response.data;
+
+            // Create pie chart
+            var ctx = document.getElementById('myPieChart').getContext('2d');
+            var myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,  // Labels for the pie chart
+                    datasets: [{
+                        data: data,    // Data for the pie chart
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],  // Optional colors
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        },
+        error: function(error) {
+            console.log('Error fetching data', error);
+        }
+    });
+});
+
