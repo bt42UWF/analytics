@@ -84,35 +84,60 @@ var errorLogsChart = new Chart(ctx2, {
 
 
 
-$(document).ready(function() {
-    // AJAX call to your API
-    $.ajax({
-        url: 'your-api-endpoint',  // Replace with your API endpoint
-        method: 'GET',
-        success: function(response) {
-            // Assuming response is in format: { labels: ['Label1', 'Label2'], data: [30, 70] }
-            var labels = response.labels;
-            var data = response.data;
+let params = {
+    dateFrom: '10-10-2024',
+    dateTo: '10-18-2024'
+};
 
-            // Create pie chart
-            var ctx = document.getElementById('myPieChart').getContext('2d');
-            var myPieChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,  // Labels for the pie chart
-                    datasets: [{
-                        data: data,    // Data for the pie chart
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],  // Optional colors
-                    }]
-                },
-                options: {
-                    responsive: true
-                }
-            });
+$.ajax({
+    url: '/Analytics/OrganizationBreakdown_GET',  // Ensure proper endpoint URL
+    type: 'GET',
+    data: params,
+    success: function(result) {
+        console.log('OrganizationBreakdown_GET');
+        console.log(result); 
+
+        const labels = result.map(item => item.organization);
+        const data = result.map(item => item.userCount);
+        
+        populatePieChart(labels, data);
+    },
+    error: function(xhr, status, error) {
+        console.error('AJAX Error: ', error);
+    }
+});
+function populatePieChart(labels, data) {
+    const ctx = document.getElementById('myPieChart').getContext('2d');
+    const myPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,  // The organization names
+            datasets: [{
+                data: data,   // The user count data
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF',
+                    '#FF9F40'
+                ]
+            }]
         },
-        error: function(error) {
-            console.log('Error fetching data', error);
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return tooltipItem.label + ': ' + tooltipItem.raw + ' users';
+                        }
+                    }
+                }
+            }
         }
     });
-});
-
+}
