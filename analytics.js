@@ -428,3 +428,33 @@ $(document).ready(function() {
         }
     });
 });
+
+
+
+// Object to hold response code counts
+let responseCodeCounts = {};
+
+// Fetch data from the API
+$.ajax({
+    url: '',
+    type: 'GET',
+    success: function(data) {
+        // Iterate over each log entry to count response codes
+        data.forEach(function(entry) {
+            const responseCode = entry["Response Code"];
+            
+            // Count occurrences of each response code
+            if (responseCodeCounts[responseCode]) {
+                responseCodeCounts[responseCode]++;
+            } else {
+                responseCodeCounts[responseCode] = 1;
+            }
+        });
+
+        // After processing, use the counts to create the pie chart
+        createPieChart(responseCodeCounts);
+    },
+    error: function(error) {
+        console.log("Error fetching logging data:", error);
+    }
+});
