@@ -458,3 +458,13 @@ $.ajax({
         console.log("Error fetching logging data:", error);
     }
 });
+
+
+
+options: {
+            indexAxis: 'x',  // Makes the bars vertical
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
