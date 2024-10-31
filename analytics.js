@@ -436,29 +436,51 @@ let responseCodeCounts = {};
 
 // Fetch data from the API
 $.ajax({
-    url: '',
-    type: 'GET',
-    success: function(data) {
-        // Iterate over each log entry to count response codes
-        data.forEach(function(entry) {
-            const responseCode = entry["Response Code"];
+        url: '/Analytics/Logging_GET',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            // Assuming response contains data in the form of an array of objects with 'code' and 'count' properties
+            let responseCodes = {};
             
             // Count occurrences of each response code
-            if (responseCodeCounts[responseCode]) {
-                responseCodeCounts[responseCode]++;
-            } else {
-                responseCodeCounts[responseCode] = 1;
-            }
-        });
+            response.forEach(function(log) {
+                const code = log.code;
+                if (responseCodes[code]) {
+                    responseCodes[code]++;
+                } else {
+                    responseCodes[code] = 1;
+                }
+            });
 
-        // After processing, use the counts to create the pie chart
-        createPieChart(responseCodeCounts);
-    },
-    error: function(error) {
-        console.log("Error fetching logging data:", error);
-    }
-});
-
+            // Extract data for Chart.js
+            const labels = Object.keys(responseCodes);
+            const data = Object.values(responseCodes);
+            
+            // Create pie chart
+            const ctx = document.getElementById('responseCodeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Response Codes',
+                        data: data,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        },
 
 
 options: {
