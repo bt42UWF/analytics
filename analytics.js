@@ -490,3 +490,20 @@ options: {
                     beginAtZero: true
                 }
             }
+
+
+
+    $('#loadChart').click(function() {
+        // Get selected date range values
+        const dateFrom = $('#dateFrom').val();
+        const dateTo = $('#dateTo').val();
+
+        // Perform the AJAX call with the date range
+        $.ajax({
+            url: '//',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                dateFrom: dateFrom,
+                dateTo: dateTo
+            },
