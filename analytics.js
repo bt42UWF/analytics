@@ -181,6 +181,7 @@ $(document).ready(function() {
             updateMetrics("all");
             populateDataTables("all");
             updateCharts("all");
+            updateTitles("all");
         },
         error: function(err) {
             console.error('Error fetching data:', err);
@@ -211,15 +212,7 @@ $(document).ready(function() {
         updateMetrics(dataFilter);
         populateDataTables(dataFilter);
         updateCharts(dataFilter);
-    }
-
-    // Function to filter data based on date range and source
-    function filterDataByDate(logs, filter, fromDate, toDate) {
-        return logs.filter(log => {
-            const logDate = new Date(log.date);
-            const isWithinDateRange = (!fromDate || logDate >= new Date(fromDate)) && (!toDate || logDate <= new Date(toDate));
-            return isWithinDateRange && filterDataBySource([log], filter).length > 0;
-        });
+        updateTitles(dataFilter);
     }
 
     // Function to update metrics
@@ -272,8 +265,8 @@ $(document).ready(function() {
     // Function to filter data based on "dataSource" column
     function filterDataBySource(logs, filter) {
         if (filter === "all") return logs;
-        if (filter === "api") return logs.filter(log => log.dataSource === "SW.API");
-        if (filter === "ui") return logs.filter(log => log.dataSource === "SW.UI");
+        if (filter === "api") return logs.filter(log => log.dataSource === "SpectreWeb.API");
+        if (filter === "ui") return logs.filter(log => log.dataSource === "SpectreWeb.UI");
         return logs;
     }
 
@@ -332,4 +325,12 @@ $(document).ready(function() {
         });
         return responseCodes;
     }
+
+    // Function to update titles based on filter
+    function updateTitles(filter) {
+        const titlePrefix = filter === "all" ? "All" : filter.charAt(0).toUpperCase() + filter.slice(1);
+        $('#apiLogsTitle').text(`${titlePrefix} API Logs`);
+        $('#exceptionLogsTitle').text(`${titlePrefix} Exception Logs`);
+    }
 });
+
