@@ -12,12 +12,14 @@ $(document).ready(function() {
         type: 'GET',
         dataType: 'json',
         success: function(data) {
-            allApiLogs = data.apiLogs;
-            allUiLogs = data.apiExceptions;
+            apiLogs = data.apiLogs
+            exceptionLogs = data.exception
             apiCallCount = data.apiCallCount;
-            uiCallCount = data.uiCallCount;
             apiErrorRate = data.apiErrorRate;
             uiErrorRate = data.uiErrorRate;
+            totalErrorRate = data.totalErrorRate;
+            totalCallCount = data.totalCallCount
+            uiCallCount = data.uiCallCou
 
             // Initially display all logs
             updateDisplay('all');
