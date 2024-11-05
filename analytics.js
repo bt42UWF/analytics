@@ -1,101 +1,66 @@
 $(document).ready(function() {
-    let allApiLogs = [];
-    let allUiLogs = [];
-    let apiCallCount = 0;
-    let uiCallCount = 0;
-    let apiErrorRate = 0;
-    let uiErrorRate = 0;
+    let allData = {};
 
     // Initial AJAX call to fetch data
     $.ajax({
-        url: '/YourEndpoint/AnalyticsLogs_GET',
+        url: '/Analytics/AnalyticsLogs_GET',
         type: 'GET',
         dataType: 'json',
         success: function(data) {
-            apiLogs = data.apiLogs
-            exceptionLogs = data.exception
-            apiCallCount = data.apiCallCount;
-            apiErrorRate = data.apiErrorRate;
-            uiErrorRate = data.uiErrorRate;
-            totalErrorRate = data.totalErrorRate;
-            totalCallCount = data.totalCallCount
-            uiCallCount = data.uiCallCou
+            // Store the full data set
+            allData.apiLogs = data.apiLogs;
+            allData.exceptionLogs = data.exceptionlogs;
+            allData.apiCallCount = data.apiCallCount;
+            allData.uiCallCount = data.uiCallCount;
+            allData.totalCallCount = data.totalCallCount;
+            allData.apiErrorRate = data.apiErrorRate;
+            allData.uiErrorRate = data.uiErrorRate;
+            allData.totalErrorRate = data.totalErrorRate;
 
-            // Initially display all logs
-            updateDisplay('all');
+            // Initialize components with "All" data
+            updateMetrics("all");
+            populateDataTables("all");
+            updateCharts("all");
         },
         error: function(err) {
             console.error('Error fetching data:', err);
         }
     });
 
-    // Dropdown event listener to filter logs based on selection
-    $('#logFilterDropdown').on('change', function() {
-        updateDisplay($(this).val());
+    // Event listener for dropdown changes
+    $('#dataFilterDropdown').on('change', function() {
+        const filter = $(this).val();
+        updateMetrics(filter);
+        populateDataTables(filter);
+        updateCharts(filter);
     });
 
-    // Date picker event listeners
-    $('#fromDate, #toDate').on('change', function() {
-        updateDisplay($('#logFilterDropdown').val());
-    });
+    // Function to update metrics
+    function updateMetrics(filter) {
+        let callCount, errorRate;
 
-    // Function to update display based on selected filter
-    function updateDisplay(filter) {
-        const fromDate = new Date($('#fromDate').val());
-        const toDate = new Date($('#toDate').val());
-        toDate.setHours(23, 59, 59, 999); // Set to end of the day
-
-        let logsToDisplay;
-        let exceptionsToDisplay;
-        let callCount;
-        let errorRate;
-        let titleSuffix;
-
-        switch (filter) {
-            case 'api':
-                logsToDisplay = filterLogsByDate(allApiLogs, fromDate, toDate);
-                exceptionsToDisplay = filterLogsByDate(allApiLogs, fromDate, toDate);
-                callCount = apiCallCount; // Adjust as necessary
-                errorRate = apiErrorRate; // Adjust as necessary
-                titleSuffix = "API Logs";
-                break;
-            case 'ui':
-                logsToDisplay = filterLogsByDate(allUiLogs, fromDate, toDate);
-                exceptionsToDisplay = filterLogsByDate(allUiLogs, fromDate, toDate);
-                callCount = uiCallCount; // Adjust as necessary
-                errorRate = uiErrorRate; // Adjust as necessary
-                titleSuffix = "UI Logs";
-                break;
-            default:
-                logsToDisplay = filterLogsByDate(allApiLogs.concat(allUiLogs), fromDate, toDate);
-                exceptionsToDisplay = filterLogsByDate(allApiLogs.concat(allUiLogs), fromDate, toDate);
-                callCount = apiCallCount + uiCallCount; // Adjust as necessary
-                errorRate = ((apiErrorRate + uiErrorRate) / 2).toFixed(2); // Adjust as necessary
-                titleSuffix = "All Logs";
+        if (filter === "api") {
+            callCount = allData.apiCallCount;
+            errorRate = allData.apiErrorRate;
+        } else if (filter === "ui") {
+            callCount = allData.uiCallCount;
+            errorRate = allData.uiErrorRate;
+        } else {
+            callCount = allData.totalCallCount;
+            errorRate = allData.totalErrorRate;
         }
 
-        // Update table and chart titles
-        $('#apiLogsTableTitle').text(titleSuffix + " Table");
-        $('#exceptionLogsTableTitle').text(titleSuffix + " Exceptions Table");
-        $('#apiResponsePieChartTitle').text(titleSuffix + " Response Codes");
-        $('#exceptionResponsePieChartTitle').text(titleSuffix + " Exceptions Response Codes");
-
-        // Update tables, charts, and metrics
-        populateDataTables(logsToDisplay, exceptionsToDisplay);
-        populatePieCharts(logsToDisplay, exceptionsToDisplay);
-        updateMetricBoxes(callCount, errorRate);
+        $('#apiCallCountMetric').text(callCount);
+        $('#apiErrorRateMetric').text(errorRate + '%');
     }
 
-    function filterLogsByDate(logs, fromDate, toDate) {
-        return logs.filter(log => {
-            const logDate = new Date(log.date);
-            return logDate >= fromDate && logDate <= toDate;
-        });
-    }
+    // Function to populate DataTables based on filter
+    function populateDataTables(filter) {
+        const filteredApiLogs = filterDataBySource(allData.apiLogs, filter);
+        const filteredExceptionLogs = filterDataBySource(allData.exceptionLogs, filter);
 
-    function populateDataTables(apiLogs, uiLogs) {
         $('#apiLogsTable').DataTable({
-            data: apiLogs,
+            data: filteredApiLogs,
             columns: [
                 { title: 'Date', data: 'date' },
                 { title: 'Request', data: 'request' },
@@ -106,7 +71,7 @@ $(document).ready(function() {
         });
 
         $('#exceptionLogsTable').DataTable({
-            data: uiLogs,
+            data: filteredExceptionLogs,
             columns: [
                 { title: 'Date', data: 'date' },
                 { title: 'Exception', data: 'exception' },
@@ -117,43 +82,254 @@ $(document).ready(function() {
         });
     }
 
-    function populatePieCharts(apiLogs, apiExceptions) {
-        const apiResponseCodes = countResponseCodes(apiLogs);
-        const exceptionResponseCodes = countResponseCodes(apiExceptions);
+    // Function to filter data based on "dataSource" column
+    function filterDataBySource(logs, filter) {
+        if (filter === "all") return logs;
+        if (filter === "api") return logs.filter(log => log.dataSource === "SW.API");
+        if (filter === "ui") return logs.filter(log => log.dataSource === "SW.UI");
+        return logs;
+    }
 
-        new Chart(document.getElementById('apiResponsePieChart'), {
+    // Function to update charts based on filter
+    function updateCharts(filter) {
+        const filteredApiLogs = filterDataBySource(allData.apiLogs, filter);
+        const filteredExceptionLogs = filterDataBySource(allData.exceptionLogs, filter);
+
+        // Prepare data for the API logs response codes pie chart
+        const apiResponseCodes = countResponseCodes(filteredApiLogs);
+        const apiLabels = Object.keys(apiResponseCodes);
+        const apiData = Object.values(apiResponseCodes);
+
+        // API Logs Response Codes Pie Chart
+        const apiCtx = document.getElementById('responseCodeChart').getContext('2d');
+        new Chart(apiCtx, {
             type: 'pie',
             data: {
-                labels: Object.keys(apiResponseCodes),
+                labels: apiLabels,
                 datasets: [{
-                    data: Object.values(apiResponseCodes),
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                    label: 'API Response Codes',
+                    data: apiData,
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
                 }]
-            }
+            },
+            options: { responsive: true }
         });
 
-        new Chart(document.getElementById('exceptionResponsePieChart'), {
+        // Prepare data for the Exception logs response codes pie chart
+        const exceptionResponseCodes = countResponseCodes(filteredExceptionLogs);
+        const exceptionLabels = Object.keys(exceptionResponseCodes);
+        const exceptionData = Object.values(exceptionResponseCodes);
+
+        // Exception Logs Response Codes Pie Chart
+        const exceptionCtx = document.getElementById('exceptionCodeChart').getContext('2d');
+        new Chart(exceptionCtx, {
             type: 'pie',
             data: {
-                labels: Object.keys(exceptionResponseCodes),
+                labels: exceptionLabels,
                 datasets: [{
-                    data: Object.values(exceptionResponseCodes),
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                    label: 'Exception Response Codes',
+                    data: exceptionData,
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
                 }]
-            }
+            },
+            options: { responsive: true }
         });
     }
 
+    // Helper function to count response codes
     function countResponseCodes(logs) {
         const responseCodes = {};
         logs.forEach(log => {
-            responseCodes[log.responseCode] = (responseCodes[log.responseCode] || 0) + 1;
+            const code = log.responseCode;
+            responseCodes[code] = (responseCodes[code] || 0) + 1;
         });
         return responseCodes;
     }
+});
 
-    function updateMetricBoxes(callCount, errorRate) {
+
+
+
+
+
+
+
+
+
+
+
+$(document).ready(function() {
+    let allData = {};
+
+    // Initial AJAX call to fetch data
+    $.ajax({
+        url: '/Analytics/AnalyticsLogs_GET',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Store the full data set
+            allData.apiLogs = data.apiLogs;
+            allData.exceptionLogs = data.exceptionlogs;
+            allData.apiCallCount = data.apiCallCount;
+            allData.uiCallCount = data.uiCallCount;
+            allData.totalCallCount = data.totalCallCount;
+            allData.apiErrorRate = data.apiErrorRate;
+            allData.uiErrorRate = data.uiErrorRate;
+            allData.totalErrorRate = data.totalErrorRate;
+
+            // Initialize components with "All" data
+            updateMetrics("all");
+            populateDataTables("all");
+            updateCharts("all");
+        },
+        error: function(err) {
+            console.error('Error fetching data:', err);
+        }
+    });
+
+    // Event listener for dropdown changes
+    $('#dataFilterDropdown').on('change', function() {
+        const filter = $(this).val();
+        applyFilters(filter);
+    });
+
+    // Event listener for date filtering
+    $('#filterByDateButton').on('click', function() {
+        const filter = $('#dataFilterDropdown').val(); // Current filter from dropdown
+        applyFilters(filter);
+    });
+
+    // Function to apply filters
+    function applyFilters(dataFilter) {
+        const fromDate = $('#dateFrom').val();
+        const toDate = $('#dateTo').val();
+
+        // Filter metrics and tables based on selected filter and date range
+        const filteredApiLogs = filterDataByDate(allData.apiLogs, dataFilter, fromDate, toDate);
+        const filteredExceptionLogs = filterDataByDate(allData.exceptionLogs, dataFilter, fromDate, toDate);
+
+        updateMetrics(dataFilter);
+        populateDataTables(dataFilter);
+        updateCharts(dataFilter);
+    }
+
+    // Function to filter data based on date range and source
+    function filterDataByDate(logs, filter, fromDate, toDate) {
+        return logs.filter(log => {
+            const logDate = new Date(log.date);
+            const isWithinDateRange = (!fromDate || logDate >= new Date(fromDate)) && (!toDate || logDate <= new Date(toDate));
+            return isWithinDateRange && filterDataBySource([log], filter).length > 0;
+        });
+    }
+
+    // Function to update metrics
+    function updateMetrics(filter) {
+        let callCount, errorRate;
+
+        if (filter === "api") {
+            callCount = allData.apiCallCount;
+            errorRate = allData.apiErrorRate;
+        } else if (filter === "ui") {
+            callCount = allData.uiCallCount;
+            errorRate = allData.uiErrorRate;
+        } else {
+            callCount = allData.totalCallCount;
+            errorRate = allData.totalErrorRate;
+        }
+
         $('#apiCallCountMetric').text(callCount);
         $('#apiErrorRateMetric').text(errorRate + '%');
+    }
+
+    // Function to populate DataTables based on filter
+    function populateDataTables(filter) {
+        const filteredApiLogs = filterDataByDate(allData.apiLogs, filter, $('#dateFrom').val(), $('#dateTo').val());
+        const filteredExceptionLogs = filterDataByDate(allData.exceptionLogs, filter, $('#dateFrom').val(), $('#dateTo').val());
+
+        $('#apiLogsTable').DataTable({
+            data: filteredApiLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Request', data: 'request' },
+                { title: 'Response Code', data: 'responseCode' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true
+        });
+
+        $('#exceptionLogsTable').DataTable({
+            data: filteredExceptionLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Exception', data: 'exception' },
+                { title: 'Status', data: 'status' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true
+        });
+    }
+
+    // Function to filter data based on "dataSource" column
+    function filterDataBySource(logs, filter) {
+        if (filter === "all") return logs;
+        if (filter === "api") return logs.filter(log => log.dataSource === "SW.API");
+        if (filter === "ui") return logs.filter(log => log.dataSource === "SW.UI");
+        return logs;
+    }
+
+    // Function to update charts based on filter
+    function updateCharts(filter) {
+        const filteredApiLogs = filterDataByDate(allData.apiLogs, filter, $('#dateFrom').val(), $('#dateTo').val());
+        const filteredExceptionLogs = filterDataByDate(allData.exceptionLogs, filter, $('#dateFrom').val(), $('#dateTo').val());
+
+        // Prepare data for the API logs response codes pie chart
+        const apiResponseCodes = countResponseCodes(filteredApiLogs);
+        const apiLabels = Object.keys(apiResponseCodes);
+        const apiData = Object.values(apiResponseCodes);
+
+        // API Logs Response Codes Pie Chart
+        const apiCtx = document.getElementById('responseCodeChart').getContext('2d');
+        new Chart(apiCtx, {
+            type: 'pie',
+            data: {
+                labels: apiLabels,
+                datasets: [{
+                    label: 'API Response Codes',
+                    data: apiData,
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        // Prepare data for the Exception logs response codes pie chart
+        const exceptionResponseCodes = countResponseCodes(filteredExceptionLogs);
+        const exceptionLabels = Object.keys(exceptionResponseCodes);
+        const exceptionData = Object.values(exceptionResponseCodes);
+
+        // Exception Logs Response Codes Pie Chart
+        const exceptionCtx = document.getElementById('exceptionCodeChart').getContext('2d');
+        new Chart(exceptionCtx, {
+            type: 'pie',
+            data: {
+                labels: exceptionLabels,
+                datasets: [{
+                    label: 'Exception Response Codes',
+                    data: exceptionData,
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    // Helper function to count response codes
+    function countResponseCodes(logs) {
+        const responseCodes = {};
+        logs.forEach(log => {
+            const code = log.responseCode;
+            responseCodes[code] = (responseCodes[code] || 0) + 1;
+        });
+        return responseCodes;
     }
 });
