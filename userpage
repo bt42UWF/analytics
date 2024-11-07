@@ -1,176 +1,178 @@
-@{
-    Layout = null;
-}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Charts and DataTable</title>
-    
-    <!-- jQuery CDN -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        body {
-            display: flex;
-            height: 100vh; /* Full height */
-            margin: 0;
-            padding: 0;
-        }
+$(document).ready(function() {
+    let responseCodeChart, exceptionCodeChart;
+    const responseCodeChartCtx = document.getElementById('responseCodeChart').getContext('2d');
+    const exceptionCodeChartCtx = document.getElementById('exceptionCodeChart').getContext('2d');
 
-        /* Left side layout: Pie charts and DataTable */
-        .left-half {
-            display: flex;
-            flex-direction: column;
-            width: 50%; /* Half the width */
-            height: 100%;
-        }
+    function initializeWithData(apiData) {
+        // Populate metric boxes
+        $('#apiCallCountMetric').text(apiData.totalCallCount);
+        $('#apiErrorRateMetric').text(apiData.totalErrorRate + '%');
 
-        /* Upper half for pie charts */
-        .pie-charts {
-            display: flex;
-            justify-content: space-around;
-            flex-grow: 1; /* Takes up half the height */
-        }
+        // Populate API Logs DataTable
+        $('#apiLogsTable').DataTable({
+            data: apiData.apiLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Request', data: 'request' },
+                { title: 'Response Code', data: 'responseCode' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true // Allows reinitialization
+        });
 
-        .chart-container {
-            width: 45%; /* Pie charts take up space evenly */
-            height: 45%; /* Adjust height to take half the left-side height */
-        }
+        // Populate Exception Logs DataTable
+        $('#exceptionLogsTable').DataTable({
+            data: apiData.exceptionLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Exception', data: 'exception' },
+                { title: 'Status', data: 'status' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true
+        });
+    }
 
-        /* Lower half for DataTable */
-        .datatable {
-            flex-grow: 1; /* Takes up remaining space */
-            padding: 10px;
-        }
+    function getCounts(logs, key) {
+        const counts = {};
+        logs.forEach(log => {
+            counts[log[key]] = (counts[log[key]] || 0) + 1;
+        });
+        return counts;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-
-        /* Right side layout: Bar chart */
-        .right-half {
-            width: 50%; /* Half the width */
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .bar-chart-container {
-            width: 100%;
-            height: 100%; /* Full height */
-        }
-    </style>
-</head>
-<body>
-    <!-- Left side: Pie charts and DataTable -->
-    <div class="left-half">
-        <div class="pie-charts">
-            <div class="chart-container">
-                <canvas id="pieChart1"></canvas>
-            </div>
-            <div class="chart-container">
-                <canvas id="pieChart2"></canvas>
-            </div>
-        </div>
-
-        <div class="datatable">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Header 1</th>
-                        <th>Header 2</th>
-                        <th>Header 3</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Row 1 Col 1</td>
-                        <td>Row 1 Col 2</td>
-                        <td>Row 1 Col 3</td>
-                    </tr>
-                    <tr>
-                        <td>Row 2 Col 1</td>
-                        <td>Row 2 Col 2</td>
-                        <td>Row 2 Col 3</td>
-                    </tr>
-                    <!-- Add more rows as needed -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Right side: Horizontal bar chart -->
-    <div class="right-half">
-        <div class="bar-chart-container">
-            <canvas id="barChart"></canvas>
-        </div>
-    </div>
-
-    <!-- jQuery and Chart.js scripts -->
-    <script>
-        $(document).ready(function () {
-            // Pie Chart 1
-            var pieChart1Ctx = $('#pieChart1');
-            var pieChart1 = new Chart(pieChart1Ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Category 1', 'Category 2', 'Category 3'],
-                    datasets: [{
-                        data: [30, 40, 30],
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-                    }]
-                }
-            });
-
-            // Pie Chart 2
-            var pieChart2Ctx = $('#pieChart2');
-            var pieChart2 = new Chart(pieChart2Ctx, {
-                type: 'pie',
-                data: {
-                    labels: ['Category A', 'Category B', 'Category C'],
-                    datasets: [{
-                        data: [25, 50, 25],
-                        backgroundColor: ['#4BC0C0', '#FF9F40', '#9966FF']
-                    }]
-                }
-            });
-
-            // Horizontal Bar Chart
-            var barChartCtx = $('#barChart');
-            var barChart = new Chart(barChartCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Item 1', 'Item 2', 'Item 3'],
-                    datasets: [{
-                        label: 'Values',
-                        data: [65, 59, 80],
-                        backgroundColor: '#36A2EB'
-                    }]
-                },
-                options: {
-                    indexAxis: 'y', // Horizontal bar chart
-                    scales: {
-                        x: {
-                            beginAtZero: true
-                        }
+    function createPieChart(ctx, counts) {
+        return new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(counts),
+                datasets: [{
+                    data: Object.values(counts),
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                    borderColor: '#ffffff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
                     }
                 }
-            });
+            }
         });
-    </script>
-</body>
-</html>
+    }
+
+    function createBarChart(ctx, counts) {
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(counts),
+                datasets: [{
+                    data: Object.values(counts),
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                    borderColor: '#ffffff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+    function updateMetricBars(selectedDataSource, apiData) {
+        if (selectedDataSource === 'SpectreWeb.API') {
+            $('#apiCallCountMetric').text(apiData.apiCallCount);
+            $('#apiErrorRateMetric').text(apiData.apiErrorRate + '%');
+        } else if (selectedDataSource === 'SpectreWeb.UI') {
+            $('#apiCallCountMetric').text(apiData.uiCallCount);
+            $('#apiErrorRateMetric').text(apiData.uiErrorRate + '%');
+        } else {
+            $('#apiCallCountMetric').text(apiData.totalCallCount);
+            $('#apiErrorRateMetric').text(apiData.totalErrorRate + '%');
+        }
+    }
+
+    function updateCharts(selectedDataSource, apiData) {
+        let filteredApiLogs = apiData.apiLogs;
+        let filteredExceptionLogs = apiData.exceptionLogs;
+
+        if (selectedDataSource === 'SpectreWeb.API') {
+            filteredApiLogs = apiData.apiLogs.filter(log => log.dataSource === 'SpectreWeb.API');
+            filteredExceptionLogs = apiData.exceptionLogs.filter(log => log.dataSource === 'SpectreWeb.API');
+        } else if (selectedDataSource === 'SpectreWeb.UI') {
+            filteredApiLogs = apiData.apiLogs.filter(log => log.dataSource === 'SpectreWeb.UI');
+            filteredExceptionLogs = apiData.exceptionLogs.filter(log => log.dataSource === 'SpectreWeb.UI');
+        }
+
+        responseCodeChart.data = {
+            labels: Object.keys(getCounts(filteredApiLogs, 'responseCode')),
+            datasets: [{
+                data: Object.values(getCounts(filteredApiLogs, 'responseCode')),
+                backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
+            }]
+        };
+        responseCodeChart.update();
+
+        exceptionCodeChart.data = {
+            labels: Object.keys(getCounts(filteredExceptionLogs, 'exception')),
+            datasets: [{
+                data: Object.values(getCounts(filteredExceptionLogs, 'exception')),
+                backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40']
+            }]
+        };
+        exceptionCodeChart.update();
+    }
+
+    // Initial AJAX call to fetch data from your API
+    $.ajax({
+        url: '/Analytics/AnalyticsLogs_GET',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            const apiData = {
+                apiLogs: data.apiLogs,
+                exceptionLogs: data.exceptionLogs,
+                apiCallCount: data.apiCallCount,
+                apiErrorRate: data.apiErrorRate,
+                uiErrorRate: data.uiErrorRate,
+                totalErrorRate: data.totalErrorRate,
+                totalCallCount: data.totalCallCount,
+                uiCallCount: data.uiCallCount
+            };
+
+            // Initialize components with API data
+            initializeWithData(apiData);
+
+            // Create initial charts
+            responseCodeChart = createPieChart(responseCodeChartCtx, getCounts(apiData.apiLogs, 'responseCode'));
+            exceptionCodeChart = createBarChart(exceptionCodeChartCtx, getCounts(apiData.exceptionLogs, 'exception'));
+
+            // Dropdown event listener
+            $('.dropdown-item').on('click', function(event) {
+                event.preventDefault();
+                const selectedDataSource = $(this).data('source');
+                $('#dataSourceDropdown').text($(this).text());
+
+                // Update metrics, DataTables, and charts based on selection
+                updateMetricBars(selectedDataSource, apiData);
+                updateCharts(selectedDataSource, apiData);
+
+                // Filter DataTable by selected data source
+                $('#apiLogsTable').DataTable().column(3).search(selectedDataSource === 'all' ? '' : selectedDataSource).draw();
+                $('#exceptionLogsTable').DataTable().column(3).search(selectedDataSource === 'all' ? '' : selectedDataSource).draw();
+            });
+        },
+        error: function(err) {
+            console.error('Error fetching data:', err);
+        }
+    });
+});
