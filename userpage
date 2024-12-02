@@ -176,3 +176,196 @@ $(document).ready(function() {
         }
     });
 });
+
+
+
+
+
+function loadData(){
+    $.ajax({
+        url: '/Analytics/AnalyticsLogs_GET',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+           const apiLogs = data.apiLogs;
+            const exceptionLogs = data.exceptionlogs;
+            const apiCallCount = data.apiCallCount;
+            const apiErrorRate = data.apiErrorRate;
+            const uiErrorRate = data.uiErrorRate;
+            const totalErrorRate = data.totalErrorRate;
+            const totalCallCount = data.totalCallCount;
+            const uiCallCount = data.uiCallCount;
+
+            // Update metric boxes
+            $('#apiCallCountMetric').text(totalCallCount);
+            $('#apiErrorRateMetric').text(totalErrorRate + '%');
+          
+}
+
+funciton populateTables(){
+     $('#apiLogsTable').DataTable({
+            data: apiLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Request', data: 'request' },
+                { title: 'Response Code', data: 'responseCode' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true
+        });
+
+        // Initialize Exception Logs DataTable
+        $('#exceptionLogsTable').DataTable({
+            data: exceptionLogs,
+            columns: [
+                { title: 'Date', data: 'date' },
+                { title: 'Exception', data: 'exception' },
+                { title: 'Response Code', data: 'responseCode' },
+                { title: 'Data Source', data: 'dataSource' }
+            ],
+            destroy: true
+        });
+    }
+
+function initCharts(){
+       const apiCtx = document.getElementById('responseCodeChart').getContext('2d');
+            new Chart(apiCtx, {
+                type: 'pie',
+                data: {
+                    labels: apiLabels,
+                    datasets: [{
+                        label: 'API Response Codes',
+                        data: apiData,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+            // Prepare data for the Exception logs response codes pie chart
+            const exceptionResponseCodes = countResponseCodes(exceptionLogs);
+            const exceptionLabels = Object.keys(exceptionResponseCodes);
+            const exceptionData = Object.values(exceptionResponseCodes);
+
+            // Exception Logs Response Codes Pie Chart
+            const exceptionCtx = document.getElementById('exceptionCodeChart').getContext('2d');
+            new Chart(exceptionCtx, {
+                type: 'bar',
+                data: {
+                    labels: exceptionLabels,
+                    datasets: [{
+                        label: 'Exception Response Codes',
+                        data: exceptionData,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        },
+    }
+
+function updateCharts(){
+    if exceptionCtx
+    exceptionCtx.destroy()
+    if apiCtx
+    apiCtx.destroy()
+    const apiCtx = document.getElementById('responseCodeChart').getContext('2d');
+            new Chart(apiCtx, {
+                type: 'pie',
+                data: {
+                    labels: apiLabels,
+                    datasets: [{
+                        label: 'API Response Codes',
+                        data: apiData,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+            // Prepare data for the Exception logs response codes pie chart
+            const exceptionResponseCodes = countResponseCodes(exceptionLogs);
+            const exceptionLabels = Object.keys(exceptionResponseCodes);
+            const exceptionData = Object.values(exceptionResponseCodes);
+
+            // Exception Logs Response Codes Pie Chart
+            const exceptionCtx = document.getElementById('exceptionCodeChart').getContext('2d');
+            new Chart(exceptionCtx, {
+                type: 'bar',
+                data: {
+                    labels: exceptionLabels,
+                    datasets: [{
+                        label: 'Exception Response Codes',
+                        data: exceptionData,
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'],
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        },
+    }
+
+}
+
+}
+
+$(document).on('click', '.dropdown-item', function (e) {
+    e.preventDefault();
+
+    const selectedSource = $(this).data('source'); // Get the selected source from the dropdown
+
+    // Filter logs based on the selected source
+    const filteredApiLogs = selectedSource === "All" || !selectedSource 
+        ? apiLogs 
+        : apiLogs.filter(log => log.dataSource === selectedSource);
+
+    const filteredExceptionLogs = selectedSource === "All" || !selectedSource 
+        ? exceptionLogs 
+        : exceptionLogs.filter(log => log.dataSource === selectedSource);
+
+    console.log('Filtered API Logs:', filteredApiLogs); // Debugging output
+    console.log('Filtered Exception Logs:', filteredExceptionLogs); // Debugging output
+
+    // Update the charts with the filtered data
+    initCharts(filteredApiLogs, filteredExceptionLogs);
+
+    // Update dropdown text
+    $('#filterDropdown').text(`Filter: ${selectedSource}`);
+});
+
